@@ -1,6 +1,5 @@
 import sys
 import pygame
-from proj import main
 
 # Configuration
 pygame.init()
@@ -9,7 +8,6 @@ fpsClock = pygame.time.Clock()
 width, height = 1200, 650
 screen = pygame.display.set_mode((width, height))
 
-font = pygame.font.SysFont('Arial', 40)
 
 objects = []
 
@@ -31,6 +29,7 @@ class Button():
         }
         self.buttonSurface = pygame.Surface((self.width, self.height))
         self.buttonRect = pygame.Rect(self.x, self.y, self.width, self.height)
+        font = pygame.font.SysFont('Arial', 40)
 
         self.buttonSurf = font.render(buttonText, True, (20, 20, 20))
         objects.append(self)
@@ -57,7 +56,6 @@ class Button():
 
 def myFunction():
     print('Button Pressed')
-    main()
 
 
 Button(30, 30, 400, 100, 'Button One (onePress)', myFunction)
@@ -72,4 +70,4 @@ while True:
     for object in objects:
         object.process()
     pygame.display.flip()
-    fpsClock.tick(fps)
+    # fpsClock.tick(fps)
