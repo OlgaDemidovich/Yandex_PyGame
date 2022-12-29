@@ -3,35 +3,94 @@ import random
 import pygame
 import sys
 import time
+import sqlite3
 
 pygame.font.init()
 objects = []
 
 
-def screen_menu(*args):
+def screen_menu():
     global objects, running
     pygame.display.flip()
     objects = []
     image = load_image('back.png')
     Button(400, 200, 400, 100, 'Играть', screen_level)
+    Button(400, 400, 400, 100, 'Рейтинг', screen_rating)
     while running:
-        for object in objects:
-            object.process()
+        for obj in objects:
+            obj.process()
             if not running and running is not None:
                 break
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.MOUSEBUTTONUP:
-                for object in objects:
-                    object.pressed()
+                for obj in objects:
+                    obj.pressed()
 
         pygame.display.flip()
         screen.blit(image, (0, 0))
     pygame.display.flip()
 
 
-def screen_level(*args):
+def screen_rating():
+    global objects, running
+    objects = []
+    font = pygame.font.Font(None, 50)
+    image = load_image('back.png')
+    playing = True
+    con = sqlite3.connect('profile.db')
+    cur = con.cursor()
+    info = list(cur.execute(f"""SELECT point, name FROM profile""").fetchall())
+    print(info)
+    info = sorted(info, key=lambda x: x[0], reverse=True)
+    print(info)
+    Button(10, 10, 150, 60, 'Назад')
+    while running and playing:
+        for obj in objects:
+            obj.process()
+
+        if not running:
+            break
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                for obj in objects:
+                    obj.pressed()
+                    if running is None:
+                        objects = []
+                        Button(400, 200, 400, 100, 'Играть', screen_level)
+                        Button(400, 400, 400, 100, 'Рейтинг', screen_rating)
+                        running = True
+                        playing = False
+                        break
+                    if not running:
+                        break
+
+        pygame.draw.rect(screen, '#00a1b8',
+                         (380, 80, 440, 460))
+        i = 100
+        screen.blit(font.render('Имя', True,
+                                (0, 0, 0)), (400, i - 10))
+        screen.blit(font.render('Очки', True,
+                                (0, 0, 0)), (700, i - 10))
+        for point, name in info:
+            i += 40
+            screen.blit(font.render(str(name), True,
+                                    (0, 0, 0)), (400, i))
+            screen.blit(font.render(str(point), True,
+                                    (0, 0, 0)), (700, i))
+            if i == 500:
+                break
+
+        pygame.display.flip()
+        screen.blit(image, (0, 0))
+    pygame.display.flip()
+    print('rating END')
+
+
+def screen_level():
     global objects, running
     objects = []
     image = load_image('back.png')
@@ -41,8 +100,8 @@ def screen_level(*args):
     Button(450, 300, 300, 100, 'Вычитание', screen_play, '-')
     Button(850, 300, 300, 100, 'Умножение', screen_play, '*')
     while running and playing:
-        for object in objects:
-            object.process()
+        for obj in objects:
+            obj.process()
 
         if not running:
             break
@@ -51,12 +110,13 @@ def screen_level(*args):
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 print('level click')
-                for object in objects:
-                    object.pressed()
+                for obj in objects:
+                    obj.pressed()
                     print('pr', running)
                     if running is None:
                         objects = []
                         Button(400, 200, 400, 100, 'Играть', screen_level)
+                        Button(400, 400, 400, 100, 'Рейтинг', screen_rating)
                         running = True
                         playing = False
                         break
@@ -65,6 +125,7 @@ def screen_level(*args):
 
         pygame.display.flip()
         screen.blit(image, (0, 0))
+
     pygame.display.flip()
     print('level END')
 
@@ -73,6 +134,7 @@ def screen_play(level):
     global objects, running
     objects = []
     font = pygame.font.Font(None, 70)
+    font1 = pygame.font.Font(None, 40)
 
     back_sprites = pygame.sprite.Group()
     Road(0, back_sprites)
@@ -106,6 +168,7 @@ def screen_play(level):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+
                 break
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
@@ -113,8 +176,8 @@ def screen_play(level):
                 elif event.key == pygame.K_DOWN:
                     car_sprite.update(190)
             elif event.type == pygame.MOUSEBUTTONUP:
-                for object in objects:
-                    object.pressed()
+                for obj in objects:
+                    obj.pressed()
                     if running is None:
                         objects = []
                         Button(10, 10, 150, 60, 'Назад')
@@ -176,11 +239,15 @@ def screen_play(level):
 
         car_sprite.draw(screen)
         car_sprite.update(0)
-        for object in objects:
-            object.process()
+
+        for obj in objects:
+            obj.process()
+
+        text_point = font1.render(f'Очки: {points}', True,
+                                  (255, 255, 255))
+        screen.blit(text_point, (200, 30))
 
         pygame.display.flip()
-
     pygame.display.flip()
     if running:
         ok(points)
@@ -198,6 +265,7 @@ def ok(points):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+                break
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 playing = False
         pygame.display.flip()
@@ -306,15 +374,14 @@ class Button:
         self.alreadyPressed = False
 
         self.fillColors = {
-            'normal': '#ffffff',
-            'hover': '#666666',
-            'pressed': '#333333',
+            'normal': '#00a1b8',
+            'hover': '#017b93'
         }
         self.buttonSurface = pygame.Surface((self.width, self.height))
         self.buttonRect = pygame.Rect(self.x, self.y, self.width, self.height)
 
-        font = pygame.font.SysFont('Arial', 40)
-        self.buttonSurf = font.render(button_text, True, (20, 20, 20))
+        font = pygame.font.Font(None, 50)
+        self.buttonSurf = font.render(button_text, True, (0, 0, 0))
         objects.append(self)
 
     def process(self):
@@ -334,7 +401,6 @@ class Button:
         running = True
         mouse_pos = pygame.mouse.get_pos()
         if self.buttonRect.collidepoint(mouse_pos):
-            self.buttonSurface.fill(self.fillColors['pressed'])
             try:
                 self.onclickFunction(*self.args)
                 self.alreadyPressed = True
