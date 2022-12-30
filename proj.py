@@ -9,32 +9,156 @@ pygame.font.init()
 objects = []
 
 
-def screen_menu():
-    global objects, running
+def distributor():
+    global func, arg
+    while running:
+        func(arg)
+
+
+def screen_authorization(*args):
+    global name, func, arg
+    print('authorization START')
+    global objects, running, playing
+    playing = True
+    pygame.display.flip()
+    objects = []
+    clock = pygame.time.Clock()
+    image = load_image('back.png')
+
+    base_font = pygame.font.Font(None, 32)
+    font = pygame.font.Font(None, 50)
+    name = ''
+    password = ''
+
+    person_name = pygame.Rect(525, 300, 150, 32)
+    person_password = pygame.Rect(525, 350, 150, 32)
+    Button(500, 450, 200, 50, 'Войти', authorization)
+
+    color_active = pygame.Color('#ffffff')
+    color_passive = pygame.Color('#00a1b8')
+
+    color_name = color_passive
+    active_name = False
+    color_password = color_passive
+    active_password = False
+    while running and playing:
+        screen.blit(image, (0, 0))
+
+        pygame.draw.rect(screen, '#01c9e3',
+                         (380, 130, 440, 430))
+
+        for obj in objects:
+            obj.process()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for obj in objects:
+                    obj.pressed()
+                    if not playing:
+                        break
+                if person_name.collidepoint(event.pos):
+                    active_name = True
+                else:
+                    active_name = False
+                if person_password.collidepoint(event.pos):
+                    active_password = True
+                else:
+                    active_password = False
+
+            if event.type == pygame.KEYDOWN:
+                if active_name:
+                    if event.key == pygame.K_BACKSPACE:
+                        name = name[:-1]
+                    elif len(name) <= 9:
+                        name += event.unicode
+                elif active_password:
+                    if event.key == pygame.K_BACKSPACE:
+                        password = password[:-1]
+                    elif len(password) <= 9:
+                        password += event.unicode
+
+        if active_name:
+            color_name = color_active
+        else:
+            color_name = color_passive
+
+        if active_password:
+            color_password = color_active
+        else:
+            color_password = color_passive
+
+        pygame.draw.rect(screen, color_name, person_name)
+        pygame.draw.rect(screen, color_password, person_password)
+
+        screen.blit(font.render('Вход/регистрация', True, (0, 0, 0)),
+                    (450, 200))
+        screen.blit(base_font.render('Имя:', True, (0, 0, 0)),
+                    (400, 305))
+        screen.blit(base_font.render('Пароль:', True, (0, 0, 0)),
+                    (400, 355))
+
+        text_name = base_font.render(name, True, (0, 0, 0))
+
+        screen.blit(text_name, (person_name.x + 5, person_name.y + 5))
+
+        text_password = base_font.render(password, True, (0, 0, 0))
+
+        screen.blit(text_password,
+                    (person_password.x + 5, person_password.y + 5))
+
+        pygame.display.flip()
+
+        clock.tick(600)
+
+    pygame.display.flip()
+    print('authorization END')
+    func = screen_menu
+    arg = password
+
+
+def authorization(password):
+    global func, arg
+    con = sqlite3.connect('profile.db')
+    cur = con.cursor()
+    true_password = list(cur.execute(f"""SELECT password FROM profile 
+                WHERE name = '{name}'""").fetchone())
+    if true_password and true_password == password:
+        func = screen_menu
+        arg = ()
+
+
+def screen_menu(*args):
+    print('menu START')
+    global objects, running, playing
+    playing = True
     pygame.display.flip()
     objects = []
     image = load_image('back.png')
     Button(400, 200, 400, 100, 'Играть', screen_level)
     Button(400, 400, 400, 100, 'Рейтинг', screen_rating)
-    while running:
+    while running and playing:
+        screen.blit(image, (0, 0))
         for obj in objects:
             obj.process()
-            if not running and running is not None:
-                break
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.MOUSEBUTTONUP:
                 for obj in objects:
                     obj.pressed()
-
+                    if not playing:
+                        break
         pygame.display.flip()
-        screen.blit(image, (0, 0))
     pygame.display.flip()
+    print('menu END')
 
 
-def screen_rating():
-    global objects, running
+def screen_rating(*args):
+    print('rating START')
+    global objects, running, playing
     objects = []
     font = pygame.font.Font(None, 50)
     image = load_image('back.png')
@@ -42,30 +166,18 @@ def screen_rating():
     con = sqlite3.connect('profile.db')
     cur = con.cursor()
     info = list(cur.execute(f"""SELECT point, name FROM profile""").fetchall())
-    print(info)
     info = sorted(info, key=lambda x: x[0], reverse=True)
-    print(info)
-    Button(10, 10, 150, 60, 'Назад')
+    Button(10, 10, 150, 60, 'Назад', screen_menu)
     while running and playing:
         for obj in objects:
             obj.process()
-
-        if not running:
-            break
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 for obj in objects:
                     obj.pressed()
-                    if running is None:
-                        objects = []
-                        Button(400, 200, 400, 100, 'Играть', screen_level)
-                        Button(400, 400, 400, 100, 'Рейтинг', screen_rating)
-                        running = True
-                        playing = False
-                        break
-                    if not running:
+                    if not playing:
                         break
 
         pygame.draw.rect(screen, '#00a1b8',
@@ -90,37 +202,27 @@ def screen_rating():
     print('rating END')
 
 
-def screen_level():
-    global objects, running
+def screen_level(*args):
+    print('level START')
+    global objects, running, playing
+    pygame.display.flip()
     objects = []
     image = load_image('back.png')
     playing = True
-    Button(10, 10, 150, 60, 'Назад')
+    Button(10, 10, 150, 60, 'Назад', screen_menu)
     Button(50, 300, 300, 100, 'Сложение', screen_play, '+')
     Button(450, 300, 300, 100, 'Вычитание', screen_play, '-')
     Button(850, 300, 300, 100, 'Умножение', screen_play, '*')
     while running and playing:
         for obj in objects:
             obj.process()
-
-        if not running:
-            break
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                print('level click')
                 for obj in objects:
                     obj.pressed()
-                    print('pr', running)
-                    if running is None:
-                        objects = []
-                        Button(400, 200, 400, 100, 'Играть', screen_level)
-                        Button(400, 400, 400, 100, 'Рейтинг', screen_rating)
-                        running = True
-                        playing = False
-                        break
-                    if not running:
+                    if not playing:
                         break
 
         pygame.display.flip()
@@ -131,8 +233,14 @@ def screen_level():
 
 
 def screen_play(level):
-    global objects, running
+    global objects, running, playing, func, arg
     objects = []
+    answer_road = -1
+    answer_x = 1050
+    count_task = 0
+    playing = True
+    points = 0
+
     font = pygame.font.Font(None, 70)
     font1 = pygame.font.Font(None, 40)
 
@@ -148,10 +256,8 @@ def screen_play(level):
     Life(1060, life_sprite)
     Life(1000, life_sprite)
 
-    Button(10, 10, 150, 60, 'Назад')
+    Button(10, 10, 150, 60, 'Назад', screen_level)
 
-    playing = True
-    points = 0
     t_start = time.monotonic() - 7
     text = font.render('', True,
                        (255, 255, 255))
@@ -162,13 +268,10 @@ def screen_play(level):
     answer_3 = font.render('', True,
                            (255, 255, 255))
 
-    answer_road = -1
-    answer_x = 1050
     while running and playing:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-
                 break
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
@@ -178,20 +281,9 @@ def screen_play(level):
             elif event.type == pygame.MOUSEBUTTONUP:
                 for obj in objects:
                     obj.pressed()
-                    if running is None:
-                        objects = []
-                        Button(10, 10, 150, 60, 'Назад')
-                        Button(50, 300, 300, 100, 'Сложение', screen_play, '+')
-                        Button(450, 300, 300, 100, 'Вычитание', screen_play,
-                               '-')
-                        Button(850, 300, 300, 100, 'Умножение', screen_play,
-                               '*')
-                        running = True
-                        playing = False
+                    if not playing:
                         break
 
-        if not running:
-            break
         screen.fill((255, 255, 255))
 
         back_sprites.draw(screen)
@@ -203,14 +295,17 @@ def screen_play(level):
             answer_x -= 2
 
         if timer >= 9:
+            count_task += 1
+            if count_task == 11:
+                playing = False
             answer_x = 1050
-            if car.road != answer_road != -1:
+            if car.road != answer_road and answer_road != -1:
                 for enemy in life_sprite:
                     life_sprite.remove(enemy)
                     break
                 if not life_sprite:
                     playing = False
-            else:
+            elif car.road == answer_road:
                 points += 1
             if not playing:
                 continue
@@ -249,18 +344,34 @@ def screen_play(level):
 
         pygame.display.flip()
     pygame.display.flip()
+    print('play END')
     if running:
-        ok(points)
+        func = ok
+        if not life_sprite:
+            arg = ''
+        else:
+            arg = points
 
 
 def ok(points):
-    global running, objects
+    global running, objects, playing, func, arg, name
     screen.fill((255, 255, 255))
     font = pygame.font.Font(None, 70)
     playing = True
-    text = font.render(f'Набрано очков: {points}', True,
-                       (0, 0, 0))
-    screen.blit(text, (400, 200))
+
+    con = sqlite3.connect('profile.db')
+    cur = con.cursor()
+    info = list(cur.execute(f"""SELECT point FROM profile 
+            WHERE name = '{name}'""").fetchone())
+
+    if type(points) is int:
+        text = font.render(f'Набрано очков: {points}', True,
+                           (0, 0, 0))
+        screen.blit(text, (400, 200))
+    else:
+        text = font.render(f'Упс, кончились жизни', True,
+                           (0, 0, 0))
+        screen.blit(text, (340, 200))
     while running and playing:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -269,14 +380,12 @@ def ok(points):
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 playing = False
         pygame.display.flip()
-    objects = []
-    Button(10, 10, 150, 60, 'Назад')
-    Button(50, 300, 300, 100, 'Сложение', screen_play, '+')
-    Button(450, 300, 300, 100, 'Вычитание', screen_play, '-')
-    Button(850, 300, 300, 100, 'Умножение', screen_play, '*')
+    func = screen_level
+    arg = ()
 
 
 def task_creation(level):
+    level = level[0]
     a, b = str(random.randrange(10, 100)), str(random.randrange(10, 100))
     if level == '-' and b >= a:
         a, b = b, a
@@ -371,7 +480,6 @@ class Button:
         self.height = height
         self.args = args
         self.onclickFunction = onclick_function
-        self.alreadyPressed = False
 
         self.fillColors = {
             'normal': '#00a1b8',
@@ -397,20 +505,22 @@ class Button:
         screen.blit(self.buttonSurface, self.buttonRect)
 
     def pressed(self):
-        global running
-        running = True
+        global playing, func, arg
+        playing = True
         mouse_pos = pygame.mouse.get_pos()
         if self.buttonRect.collidepoint(mouse_pos):
-            try:
-                self.onclickFunction(*self.args)
-                self.alreadyPressed = True
-            except TypeError:
-                running = None
+            playing = False
+            func = self.onclickFunction
+            arg = self.args
 
 
 if __name__ == '__main__':
     size = 1200, 696
     screen = pygame.display.set_mode(size)
     running = True
-    screen_menu()
+    playing = True
+    name = None
+    arg = ()
+    func = screen_authorization
+    distributor()
     pygame.quit()
