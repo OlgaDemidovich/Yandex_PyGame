@@ -15,8 +15,8 @@ def distributor():
         func(arg)
 
 
-def screen_authorization(*args):
-    global name, func, arg
+def screen_authorization(error):
+    global name, password, func, arg
     print('authorization START')
     global objects, running, playing
     playing = True
@@ -27,8 +27,6 @@ def screen_authorization(*args):
 
     base_font = pygame.font.Font(None, 32)
     font = pygame.font.Font(None, 50)
-    name = ''
-    password = ''
 
     person_name = pygame.Rect(525, 300, 150, 32)
     person_password = pygame.Rect(525, 350, 150, 32)
@@ -53,7 +51,7 @@ def screen_authorization(*args):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.type == pygame.MOUSEBUTTONUP:
                 for obj in objects:
                     obj.pressed()
                     if not playing:
@@ -98,6 +96,11 @@ def screen_authorization(*args):
                     (400, 305))
         screen.blit(base_font.render('Пароль:', True, (0, 0, 0)),
                     (400, 355))
+        if error and not active_name and not active_password:
+            screen.blit(base_font.render(error, True, (255, 0, 0)),
+                        (300, 600))
+        elif error:
+            error = ''
 
         text_name = base_font.render(name, True, (0, 0, 0))
 
@@ -114,19 +117,27 @@ def screen_authorization(*args):
 
     pygame.display.flip()
     print('authorization END')
-    func = screen_menu
-    arg = password
+    func = authorization
+    arg = ()
 
 
-def authorization(password):
+def authorization(*args):
     global func, arg
     con = sqlite3.connect('profile.db')
     cur = con.cursor()
-    true_password = list(cur.execute(f"""SELECT password FROM profile 
-                WHERE name = '{name}'""").fetchone())
-    if true_password and true_password == password:
+    true_password = cur.execute(f"""SELECT password FROM profile 
+                WHERE name = '{name}'""").fetchone()
+    print(true_password, password)
+    if true_password and str(true_password[0]) == str(password):
         func = screen_menu
         arg = ()
+    elif true_password is None:
+        cur.execute(f"""INSERT INTO profile(name, password, point) 
+                    VALUES('{name}', '{password}', 0)""")
+        con.commit()
+    else:
+        func = screen_authorization
+        arg = 'Неверный пароль'
 
 
 def screen_menu(*args):
@@ -136,6 +147,13 @@ def screen_menu(*args):
     pygame.display.flip()
     objects = []
     image = load_image('back.png')
+    font = pygame.font.Font(None, 50)
+
+    con = sqlite3.connect('profile.db')
+    cur = con.cursor()
+    point = list(cur.execute(f"""SELECT point FROM profile 
+                WHERE name = '{name}'""").fetchone())
+
     Button(400, 200, 400, 100, 'Играть', screen_level)
     Button(400, 400, 400, 100, 'Рейтинг', screen_rating)
     while running and playing:
@@ -151,6 +169,10 @@ def screen_menu(*args):
                     obj.pressed()
                     if not playing:
                         break
+        screen.blit(font.render(f'{name}', True,
+                                (0, 0, 0)), (10, 10))
+        screen.blit(font.render(f'Очки: {point[0]}', True,
+                                (0, 0, 0)), (10, 50))
         pygame.display.flip()
     pygame.display.flip()
     print('menu END')
@@ -187,9 +209,9 @@ def screen_rating(*args):
                                 (0, 0, 0)), (400, i - 10))
         screen.blit(font.render('Очки', True,
                                 (0, 0, 0)), (700, i - 10))
-        for point, name in info:
+        for point, name_person in info:
             i += 40
-            screen.blit(font.render(str(name), True,
+            screen.blit(font.render(str(name_person), True,
                                     (0, 0, 0)), (400, i))
             screen.blit(font.render(str(point), True,
                                     (0, 0, 0)), (700, i))
@@ -234,6 +256,7 @@ def screen_level(*args):
 
 def screen_play(level):
     global objects, running, playing, func, arg
+    level = level[0]
     objects = []
     answer_road = -1
     answer_x = 1050
@@ -306,7 +329,13 @@ def screen_play(level):
                 if not life_sprite:
                     playing = False
             elif car.road == answer_road:
-                points += 1
+                print(level)
+                if level == '+':
+                    points += 1
+                if level == '-':
+                    points += 2
+                if level == '*':
+                    points += 3
             if not playing:
                 continue
             t_start = time.monotonic()
@@ -345,12 +374,15 @@ def screen_play(level):
         pygame.display.flip()
     pygame.display.flip()
     print('play END')
-    if running:
+    if running and count_task == 11:
         func = ok
         if not life_sprite:
             arg = ''
         else:
             arg = points
+    elif running:
+        func = screen_level
+        arg = ()
 
 
 def ok(points):
@@ -363,10 +395,13 @@ def ok(points):
     cur = con.cursor()
     info = list(cur.execute(f"""SELECT point FROM profile 
             WHERE name = '{name}'""").fetchone())
-
     if type(points) is int:
         text = font.render(f'Набрано очков: {points}', True,
                            (0, 0, 0))
+        cur.execute(f"""UPDATE profile SET 
+                    point = '{points + int(info[0])}'
+                    WHERE name = '{name}'""")
+        con.commit()
         screen.blit(text, (400, 200))
     else:
         text = font.render(f'Упс, кончились жизни', True,
@@ -385,7 +420,6 @@ def ok(points):
 
 
 def task_creation(level):
-    level = level[0]
     a, b = str(random.randrange(10, 100)), str(random.randrange(10, 100))
     if level == '-' and b >= a:
         a, b = b, a
@@ -519,7 +553,8 @@ if __name__ == '__main__':
     screen = pygame.display.set_mode(size)
     running = True
     playing = True
-    name = None
+    name = ''
+    password = ''
     arg = ()
     func = screen_authorization
     distributor()
