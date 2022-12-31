@@ -16,9 +16,7 @@ def distributor():
 
 
 def screen_authorization(error):
-    global name, password, func, arg
-    print('authorization START')
-    global objects, running, playing
+    global name, password, func, arg, objects, running, playing
     playing = True
     pygame.display.flip()
     objects = []
@@ -35,9 +33,7 @@ def screen_authorization(error):
     color_active = pygame.Color('#ffffff')
     color_passive = pygame.Color('#00a1b8')
 
-    color_name = color_passive
     active_name = False
-    color_password = color_passive
     active_password = False
     while running and playing:
         screen.blit(image, (0, 0))
@@ -56,10 +52,12 @@ def screen_authorization(error):
                     obj.pressed()
                     if not playing:
                         break
+
                 if person_name.collidepoint(event.pos):
                     active_name = True
                 else:
                     active_name = False
+
                 if person_password.collidepoint(event.pos):
                     active_password = True
                 else:
@@ -71,6 +69,7 @@ def screen_authorization(error):
                         name = name[:-1]
                     elif len(name) <= 9:
                         name += event.unicode
+
                 elif active_password:
                     if event.key == pygame.K_BACKSPACE:
                         password = password[:-1]
@@ -96,6 +95,7 @@ def screen_authorization(error):
                     (400, 305))
         screen.blit(base_font.render('Пароль:', True, (0, 0, 0)),
                     (400, 355))
+
         if error and not active_name and not active_password:
             screen.blit(base_font.render(error, True, (255, 0, 0)),
                         (300, 600))
@@ -106,7 +106,7 @@ def screen_authorization(error):
 
         screen.blit(text_name, (person_name.x + 5, person_name.y + 5))
 
-        text_password = base_font.render(password, True, (0, 0, 0))
+        text_password = base_font.render('*' * len(password), True, (0, 0, 0))
 
         screen.blit(text_password,
                     (person_password.x + 5, person_password.y + 5))
@@ -116,7 +116,6 @@ def screen_authorization(error):
         clock.tick(600)
 
     pygame.display.flip()
-    print('authorization END')
     func = authorization
     arg = ()
 
@@ -127,7 +126,7 @@ def authorization(*args):
     cur = con.cursor()
     true_password = cur.execute(f"""SELECT password FROM profile 
                 WHERE name = '{name}'""").fetchone()
-    print(true_password, password)
+
     if true_password and str(true_password[0]) == str(password):
         func = screen_menu
         arg = ()
@@ -141,7 +140,6 @@ def authorization(*args):
 
 
 def screen_menu(*args):
-    print('menu START')
     global objects, running, playing
     playing = True
     pygame.display.flip()
@@ -155,7 +153,8 @@ def screen_menu(*args):
                 WHERE name = '{name}'""").fetchone())
 
     Button(400, 200, 400, 100, 'Играть', screen_level)
-    Button(400, 400, 400, 100, 'Рейтинг', screen_rating)
+    Button(400, 350, 400, 100, 'Рейтинг', screen_rating)
+    Button(400, 500, 400, 100, 'Сменить профиль', screen_authorization)
     while running and playing:
         screen.blit(image, (0, 0))
         for obj in objects:
@@ -174,12 +173,11 @@ def screen_menu(*args):
         screen.blit(font.render(f'Очки: {point[0]}', True,
                                 (0, 0, 0)), (10, 50))
         pygame.display.flip()
+
     pygame.display.flip()
-    print('menu END')
 
 
 def screen_rating(*args):
-    print('rating START')
     global objects, running, playing
     objects = []
     font = pygame.font.Font(None, 50)
@@ -202,8 +200,7 @@ def screen_rating(*args):
                     if not playing:
                         break
 
-        pygame.draw.rect(screen, '#00a1b8',
-                         (380, 80, 440, 460))
+        pygame.draw.rect(screen, '#00a1b8', (380, 80, 440, 460))
         i = 100
         screen.blit(font.render('Имя', True,
                                 (0, 0, 0)), (400, i - 10))
@@ -217,15 +214,13 @@ def screen_rating(*args):
                                     (0, 0, 0)), (700, i))
             if i == 500:
                 break
-
         pygame.display.flip()
         screen.blit(image, (0, 0))
+
     pygame.display.flip()
-    print('rating END')
 
 
 def screen_level(*args):
-    print('level START')
     global objects, running, playing
     pygame.display.flip()
     objects = []
@@ -251,7 +246,6 @@ def screen_level(*args):
         screen.blit(image, (0, 0))
 
     pygame.display.flip()
-    print('level END')
 
 
 def screen_play(level):
@@ -329,7 +323,6 @@ def screen_play(level):
                 if not life_sprite:
                     playing = False
             elif car.road == answer_road:
-                print(level)
                 if level == '+':
                     points += 1
                 if level == '-':
@@ -373,9 +366,8 @@ def screen_play(level):
 
         pygame.display.flip()
     pygame.display.flip()
-    print('play END')
     if running and count_task == 11:
-        func = ok
+        func = screen_result
         if not life_sprite:
             arg = ''
         else:
@@ -385,7 +377,7 @@ def screen_play(level):
         arg = ()
 
 
-def ok(points):
+def screen_result(points):
     global running, objects, playing, func, arg, name
     screen.fill((255, 255, 255))
     font = pygame.font.Font(None, 70)
@@ -429,8 +421,8 @@ def task_creation(level):
     return f'{a} {level} {b}', answers
 
 
-def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
+def load_image(name_file, colorkey=None):
+    fullname = os.path.join('data', name_file)
     # если файл не существует, то выходим
     if not os.path.isfile(fullname):
         print(f"Файл с изображением '{fullname}' не найден")
