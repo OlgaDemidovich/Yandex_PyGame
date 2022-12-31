@@ -366,7 +366,7 @@ def screen_play(level):
 
         pygame.display.flip()
     pygame.display.flip()
-    if running and count_task == 11:
+    if running and (count_task == 11 or not life_sprite):
         func = screen_result
         if not life_sprite:
             arg = ''
@@ -382,11 +382,13 @@ def screen_result(points):
     screen.fill((255, 255, 255))
     font = pygame.font.Font(None, 70)
     playing = True
+    image = load_image('back.png')
 
     con = sqlite3.connect('profile.db')
     cur = con.cursor()
     info = list(cur.execute(f"""SELECT point FROM profile 
             WHERE name = '{name}'""").fetchone())
+    screen.blit(image, (0, 0))
     if type(points) is int:
         text = font.render(f'Набрано очков: {points}', True,
                            (0, 0, 0))
