@@ -17,6 +17,7 @@ def distributor():
 
 def screen_authorization(error):
     global name, password, func, arg, objects, running, playing
+    password = ''
     playing = True
     pygame.display.flip()
     objects = []
@@ -26,9 +27,10 @@ def screen_authorization(error):
     base_font = pygame.font.Font(None, 32)
     font = pygame.font.Font(None, 50)
 
-    person_name = pygame.Rect(525, 300, 150, 32)
-    person_password = pygame.Rect(525, 350, 150, 32)
-    Button(500, 450, 200, 50, 'Войти', authorization)
+    person_name = pygame.Rect(525, 260, 150, 32)
+    person_password = pygame.Rect(525, 310, 150, 32)
+    Button(500, 400, 200, 50, 'Войти', authorization)
+    Button(475, 460, 250, 40, 'Регистрация', screen_registration, 35)
 
     color_active = pygame.Color('#ffffff')
     color_passive = pygame.Color('#00a1b8')
@@ -89,12 +91,12 @@ def screen_authorization(error):
         pygame.draw.rect(screen, color_name, person_name)
         pygame.draw.rect(screen, color_password, person_password)
 
-        screen.blit(font.render('Вход/регистрация', True, (0, 0, 0)),
-                    (450, 200))
+        screen.blit(font.render('Вход', True, (0, 0, 0)),
+                    (550, 180))
         screen.blit(base_font.render('Имя:', True, (0, 0, 0)),
-                    (400, 305))
+                    (435, 265))
         screen.blit(base_font.render('Пароль:', True, (0, 0, 0)),
-                    (400, 355))
+                    (400, 315))
 
         if error and not active_name and not active_password:
             screen.blit(base_font.render(error, True, (255, 0, 0)),
@@ -116,27 +118,185 @@ def screen_authorization(error):
         clock.tick(600)
 
     pygame.display.flip()
-    func = authorization
-    arg = ()
+
+
+def screen_registration(error):
+    global name, password, password_2, func, arg, objects, running, playing
+    playing = True
+    pygame.display.flip()
+    objects = []
+    clock = pygame.time.Clock()
+    image = load_image('back.png')
+
+    base_font = pygame.font.Font(None, 32)
+    font = pygame.font.Font(None, 50)
+
+    person_name = pygame.Rect(615, 260, 150, 32)
+    person_password = pygame.Rect(615, 310, 150, 32)
+    person_password_2 = pygame.Rect(615, 360, 150, 32)
+
+    Button(410, 430, 380, 50, 'Зарегистрироваться', registration)
+    Button(500, 490, 200, 40, 'Вход', screen_authorization, 35)
+
+    color_active = pygame.Color('#ffffff')
+    color_passive = pygame.Color('#00a1b8')
+
+    active_name = False
+    active_password = False
+    active_password_2 = False
+    while running and playing:
+        screen.blit(image, (0, 0))
+
+        pygame.draw.rect(screen, '#01c9e3',
+                         (380, 130, 440, 430))
+
+        for obj in objects:
+            obj.process()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEBUTTONUP:
+                for obj in objects:
+                    obj.pressed()
+                    if not playing:
+                        break
+
+                if person_name.collidepoint(event.pos):
+                    active_name = True
+                else:
+                    active_name = False
+
+                if person_password.collidepoint(event.pos):
+                    active_password = True
+                else:
+                    active_password = False
+
+                if person_password_2.collidepoint(event.pos):
+                    active_password_2 = True
+                else:
+                    active_password_2 = False
+
+            if event.type == pygame.KEYDOWN:
+                if active_name:
+                    if event.key == pygame.K_BACKSPACE:
+                        name = name[:-1]
+                    elif len(name) <= 9:
+                        name += event.unicode
+
+                elif active_password:
+                    if event.key == pygame.K_BACKSPACE:
+                        password = password[:-1]
+                    elif len(password) <= 9:
+                        password += event.unicode
+
+                elif active_password_2:
+                    if event.key == pygame.K_BACKSPACE:
+                        password_2 = password_2[:-1]
+                    elif len(password_2) <= 9:
+                        password_2 += event.unicode
+
+        if active_name:
+            color_name = color_active
+        else:
+            color_name = color_passive
+
+        if active_password:
+            color_password = color_active
+        else:
+            color_password = color_passive
+
+        if active_password_2:
+            color_password_2 = color_active
+        else:
+            color_password_2 = color_passive
+
+        pygame.draw.rect(screen, color_name, person_name)
+        pygame.draw.rect(screen, color_password, person_password)
+        pygame.draw.rect(screen, color_password_2, person_password_2)
+
+        screen.blit(font.render('Регистрация', True, (0, 0, 0)),
+                    (490, 180))
+        screen.blit(base_font.render('Имя:', True, (0, 0, 0)),
+                    (550, 265))
+        screen.blit(base_font.render('Пароль:', True, (0, 0, 0)),
+                    (515, 315))
+        screen.blit(base_font.render('Повторите пароль:', True, (0, 0, 0)),
+                    (400, 365))
+
+        if error and not active_name and not active_password:
+            screen.blit(base_font.render(error, True, (255, 0, 0)),
+                        (300, 600))
+        elif error:
+            error = ''
+
+        text_name = base_font.render(name, True, (0, 0, 0))
+
+        screen.blit(text_name, (person_name.x + 5, person_name.y + 5))
+
+        text_password = base_font.render('*' * len(password), True, (0, 0, 0))
+
+        screen.blit(text_password,
+                    (person_password.x + 5, person_password.y + 5))
+
+        text_password_2 = base_font.render('*' * len(password_2), True,
+                                           (0, 0, 0))
+
+        screen.blit(text_password_2,
+                    (person_password_2.x + 5, person_password_2.y + 5))
+
+        pygame.display.flip()
+
+        clock.tick(600)
+
+    pygame.display.flip()
 
 
 def authorization(*args):
     global func, arg
+
+    if name == '' or password == '':
+        func = screen_authorization
+        arg = 'Пустые поля'
+    else:
+        con = sqlite3.connect('profile.db')
+        cur = con.cursor()
+        true_password = cur.execute(f"""SELECT password FROM profile 
+                    WHERE name = '{name}'""").fetchone()
+
+        if true_password and str(true_password[0]) == str(password):
+            func = screen_menu
+            arg = ()
+        elif true_password is None:
+            func = screen_authorization
+            arg = 'Пользователя не существует'
+        else:
+            func = screen_authorization
+            arg = 'Неверный пароль'
+
+
+def registration(*args):
+    global func, arg
     con = sqlite3.connect('profile.db')
     cur = con.cursor()
     true_password = cur.execute(f"""SELECT password FROM profile 
-                WHERE name = '{name}'""").fetchone()
+                    WHERE name = '{name}'""").fetchone()
 
-    if true_password and str(true_password[0]) == str(password):
-        func = screen_menu
-        arg = ()
-    elif true_password is None:
-        cur.execute(f"""INSERT INTO profile(name, password, point) 
-                    VALUES('{name}', '{password}', 0)""")
-        con.commit()
+    if name == '' or password == '' or password_2 == '':
+        func = screen_registration
+        arg = 'Пустые поля'
     else:
-        func = screen_authorization
-        arg = 'Неверный пароль'
+        if true_password:
+            func = screen_registration
+            arg = 'Пользователь уже существует'
+        elif password != password_2:
+            func = screen_registration
+            arg = 'Пароли не совпадают'
+        elif true_password is None:
+            cur.execute(f"""INSERT INTO profile(name, password, point) 
+                            VALUES('{name}', '{password}', 0)""")
+            con.commit()
+            func = screen_menu
 
 
 def screen_menu(*args):
@@ -227,9 +387,9 @@ def screen_level(*args):
     image = load_image('back.png')
     playing = True
     Button(10, 10, 150, 60, 'Назад', screen_menu)
-    Button(50, 300, 300, 100, 'Сложение', screen_play, '+')
-    Button(450, 300, 300, 100, 'Вычитание', screen_play, '-')
-    Button(850, 300, 300, 100, 'Умножение', screen_play, '*')
+    Button(50, 300, 300, 100, 'Сложение', screen_play, 50, '+')
+    Button(450, 300, 300, 100, 'Вычитание', screen_play, 50, '-')
+    Button(850, 300, 300, 100, 'Умножение', screen_play, 50, '*')
     while running and playing:
         for obj in objects:
             obj.process()
@@ -501,7 +661,7 @@ class Road(pygame.sprite.Sprite):
 
 class Button:
     def __init__(self, x, y, width, height, button_text,
-                 onclick_function=None, *args):
+                 onclick_function=None, size_text=50, *args):
         self.x = x
         self.y = y
         self.width = width
@@ -516,7 +676,7 @@ class Button:
         self.buttonSurface = pygame.Surface((self.width, self.height))
         self.buttonRect = pygame.Rect(self.x, self.y, self.width, self.height)
 
-        font = pygame.font.Font(None, 50)
+        font = pygame.font.Font(None, size_text)
         self.buttonSurf = font.render(button_text, True, (0, 0, 0))
         objects.append(self)
 
@@ -549,6 +709,7 @@ if __name__ == '__main__':
     playing = True
     name = ''
     password = ''
+    password_2 = ''
     arg = ()
     func = screen_authorization
     distributor()
