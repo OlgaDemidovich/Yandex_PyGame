@@ -439,9 +439,9 @@ def screen_play(level):
     car = Car(car_sprite)
 
     life_sprite = pygame.sprite.Group()
-    Life(1120, life_sprite)
-    Life(1060, life_sprite)
     Life(1000, life_sprite)
+    Life(1060, life_sprite)
+    Life(1120, life_sprite)
 
     Button(10, 10, 150, 60, 'Назад', screen_level)
 
