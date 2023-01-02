@@ -26,6 +26,7 @@ def screen_authorization(error):
 
     base_font = pygame.font.Font(None, 32)
     font = pygame.font.Font(None, 50)
+    font_big = pygame.font.Font(None, 80)
 
     person_name = pygame.Rect(525, 260, 150, 32)
     person_password = pygame.Rect(525, 310, 150, 32)
@@ -91,6 +92,9 @@ def screen_authorization(error):
         pygame.draw.rect(screen, color_name, person_name)
         pygame.draw.rect(screen, color_password, person_password)
 
+        screen.blit(font_big.render('MathCar', True, (0, 0, 0)),
+                    (480, 60))
+
         screen.blit(font.render('Вход', True, (0, 0, 0)),
                     (550, 180))
         screen.blit(base_font.render('Имя:', True, (0, 0, 0)),
@@ -130,6 +134,7 @@ def screen_registration(error):
 
     base_font = pygame.font.Font(None, 32)
     font = pygame.font.Font(None, 50)
+    font_big = pygame.font.Font(None, 80)
 
     person_name = pygame.Rect(615, 260, 150, 32)
     person_password = pygame.Rect(615, 310, 150, 32)
@@ -149,6 +154,8 @@ def screen_registration(error):
 
         pygame.draw.rect(screen, '#01c9e3',
                          (380, 130, 440, 430))
+        screen.blit(font_big.render('MathCar', True, (0, 0, 0)),
+                    (480, 60))
 
         for obj in objects:
             obj.process()
@@ -306,6 +313,7 @@ def screen_menu(*args):
     objects = []
     image = load_image('back.png')
     font = pygame.font.Font(None, 50)
+    font_big = pygame.font.Font(None, 80)
 
     con = sqlite3.connect('profile.db')
     cur = con.cursor()
@@ -317,6 +325,8 @@ def screen_menu(*args):
     Button(400, 500, 400, 100, 'Сменить профиль', screen_authorization)
     while running and playing:
         screen.blit(image, (0, 0))
+        screen.blit(font_big.render('MathCar', True, (0, 0, 0)),
+                    (480, 60))
         for obj in objects:
             obj.process()
 
