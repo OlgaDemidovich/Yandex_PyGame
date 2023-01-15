@@ -5,6 +5,8 @@ import sys
 import time
 import sqlite3
 
+pygame.mixer.pre_init(44100, -16, 1, 512)
+pygame.init()
 pygame.font.init()
 objects = []
 
@@ -16,7 +18,7 @@ def distributor():
 
 
 def screen_authorization(error):
-    global name, password, func, arg, objects, running, playing
+    global name, password, func, arg, objects, running, playing, back_music
     password = ''
     playing = True
     pygame.display.flip()
@@ -38,6 +40,9 @@ def screen_authorization(error):
 
     active_name = False
     active_password = False
+    if not back_music:
+        back.play(-1)
+        back_music = True
     while running and playing:
         screen.blit(image, (0, 0))
 
@@ -307,7 +312,7 @@ def registration(*args):
 
 
 def screen_menu(*args):
-    global objects, running, playing
+    global objects, running, playing, back_music
     playing = True
     pygame.display.flip()
     objects = []
@@ -323,6 +328,9 @@ def screen_menu(*args):
     Button(400, 200, 400, 100, 'Играть', screen_level)
     Button(400, 350, 400, 100, 'Рейтинг', screen_rating)
     Button(400, 500, 400, 100, 'Сменить профиль', screen_authorization)
+    if not back_music:
+        back.play(-1)
+        back_music = True
     while running and playing:
         screen.blit(image, (0, 0))
         screen.blit(font_big.render('MathCar', True, (0, 0, 0)),
@@ -391,7 +399,7 @@ def screen_rating(*args):
 
 
 def screen_level(*args):
-    global objects, running, playing
+    global objects, running, playing, back_music
     pygame.display.flip()
     objects = []
     image = load_image('back.png')
@@ -400,6 +408,9 @@ def screen_level(*args):
     Button(50, 300, 300, 100, 'Сложение', screen_play, 50, '+')
     Button(450, 300, 300, 100, 'Вычитание', screen_play, 50, '-')
     Button(850, 300, 300, 100, 'Умножение', screen_play, 50, '*')
+    if not back_music:
+        back.play(-1)
+        back_music = True
     while running and playing:
         for obj in objects:
             obj.process()
@@ -419,7 +430,7 @@ def screen_level(*args):
 
 
 def screen_play(level):
-    global objects, running, playing, func, arg
+    global objects, running, playing, func, arg, back_music
     level = level[0]
     objects = []
     answer_road = -1
@@ -454,7 +465,9 @@ def screen_play(level):
                            (255, 255, 255))
     answer_3 = font.render('', True,
                            (255, 255, 255))
-
+    back.stop()
+    back_music = False
+    drive.play(-1)
     while running and playing:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -491,7 +504,10 @@ def screen_play(level):
                     life_sprite.remove(enemy)
                     break
                 if not life_sprite:
+                    level_end_bad.play()
                     playing = False
+                else:
+                    point_down.play()
             elif car.road == answer_road:
                 if level == '+':
                     points += 1
@@ -499,6 +515,8 @@ def screen_play(level):
                     points += 2
                 if level == '*':
                     points += 3
+                if count_task != 11:
+                    point_up.play()
             if not playing:
                 continue
             t_start = time.monotonic()
@@ -541,10 +559,12 @@ def screen_play(level):
         if not life_sprite:
             arg = ''
         else:
+            level_end_good.play()
             arg = points
     elif running:
         func = screen_level
         arg = ()
+    drive.stop()
 
 
 def screen_result(points):
@@ -581,6 +601,9 @@ def screen_result(points):
         pygame.display.flip()
     func = screen_level
     arg = ()
+    level_end_good.stop()
+    level_end_bad.stop()
+
 
 
 def task_creation(level):
@@ -713,6 +736,13 @@ class Button:
 
 
 if __name__ == '__main__':
+    point_up = pygame.mixer.Sound('data/point_up.wav')
+    point_down = pygame.mixer.Sound('data/point_down.wav')
+    level_end_bad = pygame.mixer.Sound('data/level_end_bad.wav')
+    level_end_good = pygame.mixer.Sound('data/level_end_good.wav')
+    back = pygame.mixer.Sound('data/back.wav')
+    drive = pygame.mixer.Sound('data/drive.wav')
+    back_music = False
     size = 1200, 696
     screen = pygame.display.set_mode(size)
     running = True
