@@ -744,7 +744,12 @@ if __name__ == '__main__':
     drive = pygame.mixer.Sound('data/drive.wav')
     back_music = False
     size = 1200, 696
+
     screen = pygame.display.set_mode(size)
+    pygame.display.set_caption('MathCar')
+    Icon = load_image('icon.ico')
+    pygame.display.set_icon(Icon)
+
     running = True
     playing = True
     name = ''
